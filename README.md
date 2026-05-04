@@ -8,6 +8,10 @@ Built on **BNB Smart Chain**.
 
 ## How it works
 
+The protocol exposes two complementary entry points:
+
+### 1. Incinerator — burn-for-reward (single token, immediate)
+
 ```
 User approves tokens → calls burn(token, amount) + pays flat BNB fee
         │
@@ -23,9 +27,20 @@ The reward curve is sublinear to prevent farming:
 RCY = minReward + k × √(usdValue)
 ```
 
-The protocol later sells the vaulted tokens. Proceeds are split **50% buyback & burn $RCY / 25% holder rewards / 15% dev / 10% marketing**, creating a closed deflationary loop.
+### 2. Compactor — dust pooling (batch swap to BNB)
 
-Full design spec (Spanish): [`docs/protocol-design.md`](docs/protocol-design.md).
+For tokens too small to swap individually, users deposit into a per-token batch and receive an **ERC-1155 receipt**. When the batch fills, the multisig swaps the pooled tokens for BNB on PancakeSwap V2 and users claim their pro-rata BNB. If the batch fails, depositors can redeem the original tokens.
+
+```
+User deposits dust → Compactor pools per-token batch → ERC-1155 receipt minted
+        │
+        ├─ Multisig executes batch swap on Pancake V2 → BNB
+        │       └─ User claims pro-rata BNB by burning the receipt
+        │
+        └─ Batch fails → User redeems original tokens
+```
+
+The protocol later sells the vaulted tokens. Proceeds are split **50% buyback & burn $RCY / 25% holder rewards / 15% dev / 10% marketing**, creating a closed deflationary loop.
 
 ---
 
@@ -36,21 +51,23 @@ This is a **pnpm monorepo** with three workspaces:
 | Workspace | Stack | Purpose |
 |---|---|---|
 | `contracts/` | Hardhat · Solidity 0.8.28 · OpenZeppelin 5 | Smart contracts and deploy scripts |
-| `backend/`   | Express · ethers · Supabase · PDFKit | Indexes `LogBurn` events and serves PDF certificates |
-| `frontend/`  | Next.js 14 · Wagmi · Web3Modal | Burn UI and certificate gallery |
+| `backend/`   | Express · ethers · Supabase · PDFKit | Indexes `LogBurn` and Compactor events; serves PDF certificates |
+| `frontend/`  | Next.js 16 · React 19 · Wagmi 2 · Reown AppKit | Burn UI, Compactor UI, stats and transactions pages |
 
 ### Smart contracts
 
 | Contract | Role |
 |---|---|
-| `Incinerator.sol`        | Main entry point — handles burn logic, RCY distribution, NFT minting |
-| `RCYToken.sol`           | ERC-20, fixed 1 B supply, `BURNER_ROLE` for `BuybackBurner` |
-| `TaxLossCertificate.sol` | ERC-721 minted per burn — records token, amount, USD value, timestamp |
-| `BuybackBurner.sol`      | Buys $RCY on PancakeSwap V2 with BNB proceeds, then burns it |
-| `Vault.sol`              | Per-token custody — only `Incinerator` deposits, only `PoolManager` withdraws |
-| `PriceOracle.sol`        | TWAP + Chainlink fallback for USD valuation |
-| `PoolManager.sol`        | Sells vaulted tokens; splits BNB proceeds 50/25/15/10 |
-| `MilestoneVesting.sol`   | 150 M $RCY team vesting unlocked by metric-based milestones |
+| `Incinerator.sol`           | Main entry point — handles burn logic, RCY distribution, NFT minting |
+| `RCYToken.sol`              | ERC-20, fixed 1 B supply, `BURNER_ROLE` for `BuybackBurner` |
+| `TaxLossCertificate.sol`    | ERC-721 minted per burn — records token, amount, USD value, timestamp |
+| `BuybackBurner.sol`         | Buys $RCY on PancakeSwap V2 with BNB proceeds, then burns it |
+| `Vault.sol`                 | Per-token custody — only `Incinerator` deposits, only `PoolManager` withdraws |
+| `Compactor.sol`             | Pools dust deposits per token; batches Pancake V2 swaps; pro-rata BNB claims |
+| `RCYFractionalReceipt.sol`  | ERC-1155 receipt minted by `Compactor` — burnable to claim BNB or redeem tokens |
+| `PriceOracle.sol`           | TWAP + Chainlink fallback for USD valuation |
+| `PoolManager.sol`           | Sells vaulted tokens; splits BNB proceeds 50/25/15/10 |
+| `MilestoneVesting.sol`      | 150 M $RCY team vesting unlocked by metric-based milestones |
 
 ---
 
@@ -126,7 +143,7 @@ The deploy script also handles role grants (`MINTER_ROLE`, `MANAGER_ROLE`, `BURN
 
 ## Status
 
-Early-stage. Core contracts (`Incinerator`, `RCYToken`, `TaxLossCertificate`, `BuybackBurner`) are implemented and unit-tested. `PriceOracle`, `PoolManager`, and `MilestoneVesting` are present but pending audit. Not deployed to mainnet.
+Early-stage. Core contracts (`Incinerator`, `RCYToken`, `TaxLossCertificate`, `BuybackBurner`, `Compactor`, `RCYFractionalReceipt`) are implemented and unit-tested. `PriceOracle`, `PoolManager`, and `MilestoneVesting` are present but pending audit. Not deployed to mainnet.
 
 ---
 
