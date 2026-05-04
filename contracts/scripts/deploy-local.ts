@@ -18,7 +18,9 @@ async function main() {
 
   const FLAT_FEE   = ethers.parseEther("0.001");
   const MIN_REWARD = ethers.parseEther("10");
-  const REWARD_K   = ethers.parseEther("100");
+  // See deploy.ts for the calibration derivation. usdValue is 18-decimal so
+  // sqrt($1) = 1e9, and we want $1 → 100 RCY from the curve term → k = 1e11.
+  const REWARD_K   = 100_000_000_000n;
 
   const REWARDS_POOL     = ethers.parseEther("340000000");
   const PRESALE          = ethers.parseEther("200000000");

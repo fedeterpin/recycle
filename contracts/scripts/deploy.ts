@@ -18,7 +18,13 @@ async function main() {
   const TREASURY    = process.env.TREASURY_ADDRESS || deployer.address;
   const FLAT_FEE    = ethers.parseEther("0.001");   // 0.001 BNB per burn
   const MIN_REWARD  = ethers.parseEther("10");       // 10 RCY for tokens without price
-  const REWARD_K    = ethers.parseEther("100");      // k in: RCY = minReward + k * sqrt(usdValue)
+
+  // Reward curve coefficient k in: RCY = minReward + k * sqrt(usdValue)
+  // The PriceOracle returns usdValue with 18 decimals, so sqrt($1) = sqrt(1e18) = 1e9.
+  // To make a $1 burn produce 100 RCY (= 100e18 wei) from the curve term,
+  // we need k * 1e9 = 100e18 → k = 1e11 wei.
+  // With this, $100 → 1010 RCY and $10,000 → 10,010 RCY (matches whitepaper §2.3).
+  const REWARD_K    = 100_000_000_000n;              // 1e11 wei — see comment above
 
   // ── Supply distribution (must sum to 1,000,000,000) ───────────────────────
   const TOTAL              = ethers.parseEther("1000000000");

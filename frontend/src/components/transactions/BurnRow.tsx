@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useReadContracts } from "wagmi";
 import { formatUnits } from "viem";
 import { ERC20_ABI } from "@/lib/abis/erc20";
@@ -11,6 +12,14 @@ interface Props {
 }
 
 export function BurnRow({ event }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  const copyTxHash = async () => {
+    await navigator.clipboard.writeText(event.txHash);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
   const { data } = useReadContracts({
     contracts: [
       { address: event.token, abi: ERC20_ABI, functionName: "symbol" },
@@ -65,29 +74,72 @@ export function BurnRow({ event }: Props) {
       </td>
 
       <td className="py-3 px-3 text-xs">
-        {txLink ? (
-          <a href={txLink} target="_blank" rel="noreferrer" className="text-brand-green hover:underline font-mono">
-            {event.txHash.slice(0, 8)}↗
-          </a>
-        ) : (
-          <span className="text-slate-500 font-mono">{event.txHash.slice(0, 10)}…</span>
-        )}
+        <div className="inline-flex items-center gap-1.5">
+          {txLink ? (
+            <a
+              href={txLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-green hover:underline font-mono"
+              title={event.txHash}
+            >
+              {event.txHash.slice(0, 8)}↗
+            </a>
+          ) : (
+            <span className="text-slate-400 font-mono" title={event.txHash}>
+              {event.txHash.slice(0, 10)}…
+            </span>
+          )}
+          <button
+            onClick={copyTxHash}
+            className="text-slate-500 hover:text-brand-green transition-colors px-1 rounded"
+            title={copied ? "Copied!" : "Copy tx hash"}
+          >
+            {copied ? "✓" : "⧉"}
+          </button>
+        </div>
       </td>
     </tr>
   );
 }
 
 function Address({ value, link, muted = false }: { value: string; link: string | null; muted?: boolean }) {
+  const [copied, setCopied] = useState(false);
   const short = `${value.slice(0, 6)}…${value.slice(-4)}`;
   const cls = muted ? "text-slate-500" : "text-slate-300";
-  if (link) {
-    return (
-      <a href={link} target="_blank" rel="noreferrer" className={`${cls} hover:text-brand-green font-mono`}>
-        {short}
-      </a>
-    );
-  }
-  return <span className={`${cls} font-mono`}>{short}</span>;
+
+  const copy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+          className={`${cls} hover:text-brand-green font-mono`}
+          title={value}
+        >
+          {short}
+        </a>
+      ) : (
+        <span className={`${cls} font-mono`} title={value}>{short}</span>
+      )}
+      <button
+        onClick={copy}
+        className="text-slate-600 hover:text-brand-green transition-colors px-0.5 rounded text-[11px]"
+        title={copied ? "Copied!" : "Copy address"}
+      >
+        {copied ? "✓" : "⧉"}
+      </button>
+    </span>
+  );
 }
 
 function trimNumber(s: string, maxDecimals: number): string {
