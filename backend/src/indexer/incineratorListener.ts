@@ -38,11 +38,19 @@ async function connect(): Promise<void> {
         usdValue: bigint,
         rcyRewarded: bigint,
         certificateId: bigint,
-        event: ethers.EventLog,
+        // ethers v6 passes a ContractEventPayload here, not an EventLog directly.
+        // The actual log (with transactionHash, blockNumber) lives at payload.log.
+        payload: ethers.ContractEventPayload,
       ) => {
-        await handleBurn(provider, {
-          user, token, amount, usdValue, rcyRewarded, certificateId, event,
-        });
+        try {
+          await handleBurn(provider, {
+            user, token, amount, usdValue, rcyRewarded, certificateId,
+            event: payload.log,
+          });
+        } catch (err) {
+          // Don't let a single failure tear down the whole listener process.
+          console.error("[Indexer] Failed to handle LogBurn:", err);
+        }
       },
     );
 

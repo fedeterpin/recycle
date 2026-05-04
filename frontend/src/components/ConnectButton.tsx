@@ -1,7 +1,7 @@
 "use client";
 
-/// w3m-button is a custom element registered by Web3Modal.
-/// Its JSX type is provided by @web3modal/wagmi — no extra declaration needed.
+/// appkit-button is a custom element registered by @reown/appkit when
+/// createAppKit is called in lib/wagmiConfig.ts.
 export function ConnectButton() {
-  return <w3m-button />;
+  return <appkit-button />;
 }

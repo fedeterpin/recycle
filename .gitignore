@@ -7,8 +7,8 @@ out/
 cache/
 artifacts/
 typechain-types/
-deployments/*.json
-!deployments/.gitkeep
+**/deployments/*.json
+!**/deployments/.gitkeep
 coverage/
 coverage.json
 *.log
