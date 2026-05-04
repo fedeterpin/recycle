@@ -20,6 +20,12 @@ export function Nav() {
             Incinerator
           </Link>
           <Link
+            href="/compactor"
+            className="text-slate-300 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-800/60 transition-colors"
+          >
+            Compactor
+          </Link>
+          <Link
             href="/stats"
             className="text-slate-300 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-800/60 transition-colors"
           >

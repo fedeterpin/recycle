@@ -1,11 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useReadContracts } from "wagmi";
 import { formatEther, formatUnits } from "viem";
 import { CONTRACTS } from "@/lib/contracts";
 import { StatCard } from "./StatCard";
 import { AddressRow } from "./AddressRow";
 import { SplitsBar } from "./SplitsBar";
+
+interface CompactorStats {
+  total_batches: number;
+  open_batches: number;
+  executed_batches: number;
+  failed_batches: number;
+  total_bnb_distributed: string; // raw wei
+}
 
 const BIG_FORMATTER = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const DEC_FORMATTER = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
@@ -46,9 +55,36 @@ export function StatsModule() {
 
       // Certificates
       { ...CONTRACTS.certificate, functionName: "nextTokenId" },
+
+      // Compactor
+      { ...CONTRACTS.compactor,   functionName: "protocolFeeBps" },
+      { ...CONTRACTS.compactor,   functionName: "treasury" },
     ],
     query: { refetchInterval: 8_000 },
   });
+
+  const [compactorStats, setCompactorStats] = useState<CompactorStats | null>(null);
+  useEffect(() => {
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    if (!api) return;
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const res = await fetch(`${api}/compactor/stats`);
+        if (!res.ok) return;
+        const json = (await res.json()) as CompactorStats;
+        if (!cancelled) setCompactorStats(json);
+      } catch {
+        // backend may be down — fail silently, on-chain values still render
+      }
+    }
+    refresh();
+    const id = setInterval(refresh, 8_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   const get = <T,>(i: number): T | undefined => data?.[i]?.result as T | undefined;
 
@@ -67,6 +103,8 @@ export function StatsModule() {
   const unlockedMilestones= get<bigint>(12);
   const beneficiaries     = get<string[]>(13);
   const nextTokenId       = get<bigint>(14);
+  const compactorFeeBps   = get<bigint>(15);
+  const compactorTreasury = get<string>(16);
 
   const burnsProcessed = nextTokenId != null ? nextTokenId - 1n : undefined;
 
@@ -227,6 +265,41 @@ export function StatsModule() {
           require multisig confirmation and are tied to public, verifiable metrics.
         </p>
         <AddressRow label="MilestoneVesting contract" address={CONTRACTS.vesting.address} />
+      </section>
+
+      {/* ── Compactor ─────────────────────────────────────────────────────── */}
+      <section className="card p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Compactor</h2>
+        <div className="grid gap-3 md:grid-cols-2 mb-5">
+          <Metric
+            label="Protocol fee"
+            value={compactorFeeBps != null ? `${(Number(compactorFeeBps) / 100).toFixed(2)}%` : "—"}
+          />
+          <Metric
+            label="Total batches"
+            value={compactorStats != null ? compactorStats.total_batches.toString() : "—"}
+          />
+          <Metric
+            label="Executed batches"
+            value={compactorStats != null ? compactorStats.executed_batches.toString() : "—"}
+          />
+          <Metric
+            label="BNB distributed to users"
+            value={
+              compactorStats != null
+                ? Number(formatEther(BigInt(compactorStats.total_bnb_distributed))).toFixed(4)
+                : "—"
+            }
+            unit="BNB"
+          />
+        </div>
+        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+          Open: {compactorStats?.open_batches ?? "—"} · Failed: {compactorStats?.failed_batches ?? "—"}.
+          Open batches are awaiting multisig execution; failed batches let users redeem their original tokens.
+        </p>
+        <AddressRow label="Treasury (BNB fees)" address={compactorTreasury || "—"} />
+        <AddressRow label="Compactor contract" address={CONTRACTS.compactor.address} />
+        <AddressRow label="RCYFractionalReceipt" address={CONTRACTS.receipt.address} />
       </section>
 
       {/* ── Certificates ──────────────────────────────────────────────────── */}

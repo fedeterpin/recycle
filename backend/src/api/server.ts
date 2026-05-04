@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "../config";
 import { burnsRouter } from "./routes/burns";
 import { certificatesRouter } from "./routes/certificates";
+import { compactorRouter } from "./routes/compactor";
 import { errorHandler } from "./middleware/errorHandler";
 
 export function createServer(): Application {
@@ -20,6 +21,7 @@ export function createServer(): Application {
 
   app.use("/burns", burnsRouter);
   app.use("/certificates", certificatesRouter);
+  app.use("/compactor", compactorRouter);
 
   app.use(errorHandler);
 

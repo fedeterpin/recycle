@@ -1,5 +1,6 @@
 import { createServer } from "./api/server";
 import { startIncineratorListener } from "./indexer/incineratorListener";
+import { startCompactorListener } from "./indexer/compactorListener";
 import { config } from "./config";
 
 async function main() {
@@ -9,8 +10,8 @@ async function main() {
     console.log(`[API] Server listening on port ${config.port}`);
   });
 
-  // Start blockchain event indexer
-  await startIncineratorListener();
+  // Start blockchain event indexers
+  await Promise.all([startIncineratorListener(), startCompactorListener()]);
 
   // Graceful shutdown
   const shutdown = () => {

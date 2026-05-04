@@ -19,6 +19,7 @@ export const config = {
   rpcUrl: require_env("RPC_URL"),
   chainId: parseInt(process.env.CHAIN_ID || "56", 10),
   incineratorAddress: require_env("INCINERATOR_ADDRESS"),
+  compactorAddress: require_env("COMPACTOR_ADDRESS"),
   supabaseUrl: require_env("SUPABASE_URL"),
   supabaseServiceKey: require_env("SUPABASE_SERVICE_KEY"),
   corsOrigins,

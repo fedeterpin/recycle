@@ -9,11 +9,12 @@ const modules = [
     status: "Live",
   },
   {
-    href: "#",
+    href: "/compactor",
     title: "Compactor",
     emoji: "🗜️",
-    description: "Bundle dust positions into a single redeemable basket.",
-    status: "Soon",
+    description:
+      "Pool dust into a per-token batch. Multisig swaps it for BNB. Burn your receipt to claim pro-rata.",
+    status: "Live",
   },
   {
     href: "#",

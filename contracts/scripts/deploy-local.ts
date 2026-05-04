@@ -111,16 +111,64 @@ async function main() {
   const vestingAddress = await vesting.getAddress();
   console.log(`   MilestoneVesting: ${vestingAddress}`);
 
-  // ── 9. Grant roles ───────────────────────────────────────────────────────────
-  console.log("\n9. Granting roles...");
+  // ── 9. MockPancakeRouter (localhost only) ────────────────────────────────────
+  // BSC mainnet PancakeSwap V2 router is unreachable from a local Hardhat node,
+  // so on localhost we deploy a mock that pays BNB at a configurable rate and
+  // gets pre-funded with BNB for tests/manual swaps.
+  const PANCAKE_V2_MAINNET = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
+  let routerAddress: string;
+  let mockRouterAddress: string | null = null;
+  if (network.name === "localhost" || network.name === "hardhat") {
+    console.log("\n9. Deploying MockPancakeRouter...");
+    const MockRouter = await ethers.getContractFactory("MockPancakeRouter");
+    const wbnb = "0x000000000000000000000000000000000000bEEF"; // placeholder
+    const mockRouter = await MockRouter.deploy(wbnb);
+    await mockRouter.waitForDeployment();
+    mockRouterAddress = await mockRouter.getAddress();
+    routerAddress = mockRouterAddress;
+    await deployer.sendTransaction({
+      to: mockRouterAddress,
+      value: ethers.parseEther("100"),
+    });
+    console.log(`   MockPancakeRouter: ${mockRouterAddress} (funded with 100 BNB)`);
+  } else {
+    routerAddress = PANCAKE_V2_MAINNET;
+    console.log(`\n9. Using mainnet PancakeSwap V2 router: ${routerAddress}`);
+  }
+
+  // ── 10. RCYFractionalReceipt ─────────────────────────────────────────────────
+  console.log("\n10. Deploying RCYFractionalReceipt...");
+  const RCYFractionalReceipt = await ethers.getContractFactory("RCYFractionalReceipt");
+  const receipt = await RCYFractionalReceipt.deploy(deployer.address);
+  await receipt.waitForDeployment();
+  const receiptAddress = await receipt.getAddress();
+  console.log(`   RCYFractionalReceipt: ${receiptAddress}`);
+
+  // ── 11. Compactor ────────────────────────────────────────────────────────────
+  console.log("\n11. Deploying Compactor...");
+  const Compactor = await ethers.getContractFactory("Compactor");
+  const compactor = await Compactor.deploy(
+    receiptAddress,
+    routerAddress,
+    deployer.address, // treasury
+    deployer.address, // admin (also EXECUTOR_ROLE)
+  );
+  await compactor.waitForDeployment();
+  const compactorAddress = await compactor.getAddress();
+  console.log(`   Compactor: ${compactorAddress}`);
+
+  // ── 12. Grant roles ──────────────────────────────────────────────────────────
+  console.log("\n12. Granting roles...");
   await certificate.grantRole(await certificate.MINTER_ROLE(), incineratorAddress);
   await vault.grantRole(await vault.MANAGER_ROLE(), poolManagerAddress);
   await rcy.grantRole(await rcy.BURNER_ROLE(), buybackBurnerAddress);
   await buybackBurner.grantRole(await buybackBurner.CALLER_ROLE(), poolManagerAddress);
+  await receipt.grantRole(await receipt.MINTER_ROLE(), compactorAddress);
+  await receipt.grantRole(await receipt.BURNER_ROLE(), compactorAddress);
   console.log("   Roles granted.");
 
-  // ── 10. Distribute RCY supply ─────────────────────────────────────────────────
-  console.log("\n10. Distributing RCY supply...");
+  // ── 13. Distribute RCY supply ─────────────────────────────────────────────────
+  console.log("\n13. Distributing RCY supply...");
   await rcy.transfer(incineratorAddress, REWARDS_POOL);
   await rcy.transfer(deployer.address,   PRESALE);           // presale wallet = deployer
   await rcy.transfer(deployer.address,   DEX_LIQUIDITY);     // liquidity wallet = deployer
@@ -129,7 +177,7 @@ async function main() {
   await rcy.transfer(vestingAddress,     TEAM_VESTING);
   console.log("   Supply distributed.");
 
-  // ── 11. Save addresses ────────────────────────────────────────────────────────
+  // ── 14. Save addresses ────────────────────────────────────────────────────────
   const deployments = {
     network: network.name,
     deployer: deployer.address,
@@ -143,6 +191,9 @@ async function main() {
       BuybackBurner: buybackBurnerAddress,
       PoolManager: poolManagerAddress,
       MilestoneVesting: vestingAddress,
+      RCYFractionalReceipt: receiptAddress,
+      Compactor: compactorAddress,
+      ...(mockRouterAddress ? { MockPancakeRouter: mockRouterAddress } : {}),
     },
   };
 
@@ -154,6 +205,8 @@ async function main() {
   console.log(`\n✅ Deploy local completo. Direcciones en deployments/localhost.json`);
   console.log(`\n   INCINERATOR_ADDRESS=${incineratorAddress}`);
   console.log(`   RCY_TOKEN_ADDRESS=${rcyAddress}`);
+  console.log(`   COMPACTOR_ADDRESS=${compactorAddress}`);
+  console.log(`   RECEIPT_ADDRESS=${receiptAddress}`);
 }
 
 main().catch((err) => {
