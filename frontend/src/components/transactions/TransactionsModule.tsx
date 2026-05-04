@@ -81,6 +81,7 @@ export function TransactionsModule() {
                   <Th>RCY received</Th>
                   <Th>Rate</Th>
                   <Th>TX</Th>
+                  <Th>Certificate</Th>
                 </tr>
               </thead>
               <tbody>

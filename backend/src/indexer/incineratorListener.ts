@@ -63,7 +63,7 @@ async function connect(): Promise<void> {
 
 async function backfill(
   contract: ethers.Contract,
-  provider: ethers.JsonRpcProvider,
+  provider: ethers.Provider,
   fromBlock: number,
   toBlock: number,
 ): Promise<void> {
@@ -95,7 +95,7 @@ interface BurnEvent {
   event: ethers.EventLog;
 }
 
-async function handleBurn(provider: ethers.JsonRpcProvider, e: BurnEvent): Promise<void> {
+async function handleBurn(provider: ethers.Provider, e: BurnEvent): Promise<void> {
   const txHash = e.event.transactionHash;
   const blockNumber = e.event.blockNumber;
   const block = await provider.getBlock(blockNumber);

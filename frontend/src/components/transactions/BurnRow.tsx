@@ -11,6 +11,8 @@ interface Props {
   event: BurnEvent;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export function BurnRow({ event }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -98,6 +100,22 @@ export function BurnRow({ event }: Props) {
             {copied ? "✓" : "⧉"}
           </button>
         </div>
+      </td>
+
+      <td className="py-3 px-3 text-xs">
+        {API_URL ? (
+          <a
+            href={`${API_URL}/certificates/${event.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 hover:text-white transition-colors"
+            title="Download Loss Certificate PDF"
+          >
+            ↓ PDF
+          </a>
+        ) : (
+          <span className="text-slate-600 text-[11px]">—</span>
+        )}
       </td>
     </tr>
   );
