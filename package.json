@@ -1,0 +1,19 @@
+{
+  "name": "recycle-protocol",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n contracts,backend,frontend -c cyan,yellow,magenta \"pnpm --filter contracts node\" \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "compile": "pnpm --filter contracts compile",
+    "test:contracts": "pnpm --filter contracts test",
+    "deploy:local": "pnpm --filter contracts deploy:local",
+    "deploy:testnet": "pnpm --filter contracts deploy:testnet",
+    "backend:dev": "pnpm --filter backend dev",
+    "frontend:dev": "pnpm --filter frontend dev",
+    "contracts:node": "pnpm --filter contracts node"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

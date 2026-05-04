@@ -1,0 +1,26 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "node": "hardhat node",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy-local.ts --network localhost",
+    "deploy:local:mainnet-script": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network bscTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network bscMainnet",
+    "verify": "hardhat run scripts/verify.ts",
+    "slither": "slither ."
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^17.3.1"
+  }
+}

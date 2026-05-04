@@ -1,0 +1,14 @@
+/** @type {import('next').NextConfig} */
+const config = {
+  env: {
+    NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "",
+    NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID ?? "56",
+    NEXT_PUBLIC_INCINERATOR_ADDRESS: process.env.NEXT_PUBLIC_INCINERATOR_ADDRESS ?? "",
+    NEXT_PUBLIC_COMPACTOR_ADDRESS: process.env.NEXT_PUBLIC_COMPACTOR_ADDRESS ?? "",
+    NEXT_PUBLIC_SCRAP_MARKET_ADDRESS: process.env.NEXT_PUBLIC_SCRAP_MARKET_ADDRESS ?? "",
+    NEXT_PUBLIC_RCY_TOKEN_ADDRESS: process.env.NEXT_PUBLIC_RCY_TOKEN_ADDRESS ?? "",
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
+  },
+};
+
+export default config;
